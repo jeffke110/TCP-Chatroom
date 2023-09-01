@@ -13,35 +13,19 @@ class Handler:
         self.clientDict = clientDict
     
     
-    def handle_clients(self, server):
-        client, address = server.accept()
-        print(f'Connected with {str(address)}')
-        
-        data = {'TYPE' : 'USERNAME'}
-        json_data = json.dumps(data).encode('utf-8')
-        client.send(json_data)
-        
-        self.nickname : str = client.recv(1024).decode('ascii')
-        
-        while self.database.create_user(self.nickname) == False:
-            data = {'TYPE': 'INVALID_USERNAME'}
-            json_data = json.dumps(data).encode('utf-8')
-            client.send(json_data)
-            self.nickname = client.recv(1024).decode('ascii')
+    def handle_clients(self, server, closing):
+        try:
+            client, address = server.accept()
+            print(f'Connected with {str(address)}')
+            if not closing:
+                thread = threading.Thread(target=self.handle_client, args=(client, address))
+                thread.start()
             
-        self.clientDict["lobby0"].append(client)
-           
-        # add user to general lobby
-        self.database.add_user_to_lobby(self.nickname, "lobby0")
-        
-        data = {'TYPE' : 'VALIDATED'}
-        json_data = json.dumps(data).encode('utf-8')
-        client.send(json_data)
-
-        thread = threading.Thread(target=self.handle_client, args=(client,))
-        thread.start()
+        except OSError as e:
+            if not closing:
+                print(f"Error accepting client: {e}")
     
 
-    def handle_client(self, client):
-        client = Client(client, self.nickname, self.clientDict, self.database)
+    def handle_client(self, client, address):
+        client = Client(client, address, self.clientDict, self.database)
         client.handler()

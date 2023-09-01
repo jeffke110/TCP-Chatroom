@@ -19,7 +19,7 @@ class Gui:
         self.message_font = font.Font(family="Inter Light", size=9, weight="bold")
         self.user_font = font.Font(family="Inter Light", size=9, weight="bold")
         self.entry_font = font.Font(family="Inter Light", size=12)
-        self.create_widgets()
+        self.register_screen()
         
     
     def create_lobbies(self):
@@ -34,7 +34,7 @@ class Gui:
         self.lobby_canvas.create_window((0,0), window=self.lobby_frame, anchor="nw")
 
         for lobby in range(10):
-            if lobby is 0:
+            if lobby == 0:
                 self.a_lobby = Button(self.lobby_frame, text=f'Lobby {lobby}', width=20, height=2, background="white", foreground=self.font_color, font=self.lobby_font)
             else:
                 self.a_lobby = Button(self.lobby_frame, text=f'Lobby {lobby}', width=20, height=2, background=self.secondary_color, foreground=self.font_color, font=self.lobby_font)
@@ -65,7 +65,6 @@ class Gui:
             widget.destroy()
         
         for row, message in enumerate(self.messages):
-            #Label(self.message_frame, text=f'{message}', width=75, height=1, anchor="w", background=self.secondary_color, foreground=self.font_color, font=self.message_font).grid(row=row, column=0, pady=10, padx=10)
             username_label = ttk.Label(self.message_frame, text=f"{message['USER']}:", background=self.secondary_color, foreground=self.font_color, font=self.message_font, wraplength=60)  # Adjust the wraplength value as needed
             username_label.grid(row=row, column=0, sticky="w", padx=10, pady=5)
 
@@ -107,6 +106,9 @@ class Gui:
 
 
     def create_widgets(self):
+        for i in self.root.winfo_children():
+            i.destroy()
+            
         self.root.config(bg=self.primary_color)
         
         self.nickname_label = Label(self.root, text="Nickname:", background=self.primary_color, foreground=self.font_color, font=self.primary_font)
@@ -134,9 +136,6 @@ class Gui:
         self.user_label = Label(self.root, text="Users", background=self.primary_color, foreground=self.font_color, font=self.primary_font)
         self.user_label.grid(row=0, column=4, rowspan=1, columnspan=1, sticky="nsew")
         
-        self.logout_button = Button(self.root, text="Logout", width=10, height=1, background=self.secondary_color, foreground=self.font_color, font=self.primary_font)
-        self.logout_button.grid(row=10, column=0)
-        
         self.create_lobbies()
         self.create_mesages()
         self.create_users()
@@ -145,3 +144,32 @@ class Gui:
             self.root.grid_rowconfigure(row, weight=1)
         for col in range(5): 
             self.root.grid_columnconfigure(col, weight=1)
+
+    
+    def register_screen(self):
+        for i in self.root.winfo_children():
+            i.destroy()
+        username_text = StringVar()
+        self.root.config(bg=self.primary_color)
+
+        self.label_one = Label(self.root, text="Sign in / Sign up", background=self.primary_color, foreground=self.font_color, font=self.primary_font)
+        self.label_one.pack()
+        
+        self.label_two = Label(self.root,  background=self.primary_color)
+        self.label_two.pack()
+
+        self.username_label = Label(self.root, text="Username * ", background=self.primary_color, foreground=self.font_color, font=self.primary_font)
+        self.username_label.pack()
+       
+        self.username_entry = Entry(self.root, textvariable=username_text, background=self.primary_color, foreground="white", font=self.primary_font)
+        self.username_entry.config(validate="key", validatecommand=(self.root.register(self.on_validate), "%P"))
+        self.username_entry.pack()
+
+        self.label_three = Label(self.root,  background=self.primary_color)
+        self.label_three.pack()
+        
+        self.register_button =  Button(self.root, text="Register", width=10, height=1, bg="grey", background=self.primary_color, foreground=self.font_color, font=self.primary_font)
+        self.register_button.pack()
+        
+    def on_validate(self, new_text):
+        return len(new_text) <= 20
