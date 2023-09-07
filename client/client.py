@@ -1,35 +1,36 @@
+# Import necessary libraries
 import socket
 import threading
-import logging
-import random
 import json
 from .gui import Gui
 from tkinter import *
 from tkinter import ttk
 from datetime import datetime
 
-logger = logging.getLogger(__name__)
 
-
+# Define the Client class
 class Client:
     def __init__(self, server_ip, server_port):
+        # Initialize client properties
         self.server_ip = server_ip
         self.server_port = server_port
         self.client_socket = None
         self.nickname = None
-        self.app : Gui = None
+        self.app: Gui = None  # Reference to the GUI
         self.running = True
         self.current_lobby = "lobby0"
         self.update = False
 
     def connect_to_server(self):
+        # Create a socket and connect to the server
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_socket.connect((self.server_ip, self.server_port))
         print("Connected to server.")
-        
+
     def receive_messages(self):
         while self.running:
             try:
+                # Receive and process incoming messages from the server
                 received_object = self.client_socket.recv(4096).decode('utf-8')
                 payloads = received_object.strip().split('\n')
                 for payload in payloads:
@@ -58,52 +59,55 @@ class Client:
                 print(f"Error Info: {e}")
                 break
 
-        
     def write_messages(self):
+        # Configure GUI elements for sending messages and changing lobbies
         self.app.send_button.config(command=self.send_message)
-        self.app.message_entry.bind("<Return>", lambda event: self.send_message())  
+        self.app.message_entry.bind("<Return>", lambda event: self.send_message())
         for index, lobby in enumerate(self.app.lobbies):
             lobby.config(command=lambda i=index: self.change_lobby(i))
-            
+
     def send_login(self):
         if len(self.app.username_entry.get()) > 0:
+            # Send user's chosen nickname to the server for registration
             self.nickname = self.app.username_entry.get()
-            data = {"TYPE" : self.nickname}
+            data = {"TYPE": self.nickname}
             json_data = json.dumps(data).encode('utf-8')
             self.client_socket.send(json_data)
 
     def change_lobby(self, index):
-    
+        # Change the active lobby and notify the server
         self.app.lobbies[index].config(bg="white")
         for row, lobby in enumerate(self.app.lobbies):
             if index is not row:
-                lobby.config(bg="grey1")  
+                lobby.config(bg="grey1")
         self.app.users = []
         self.app.messages = []
-        self.current_lobby = f'lobby{index}'      
-        data = {"TYPE": "CHANGE_LOBBY", "LOBBY" : f'lobby{index}'}
+        self.current_lobby = f'lobby{index}'
+        data = {"TYPE": "CHANGE_LOBBY", "LOBBY": f'lobby{index}'}
         json_data = json.dumps(data).encode('utf-8')
         self.client_socket.send(json_data)
-        
+
     def send_message(self):
         info = self.app.message_entry.get()
-        if(len(info) > 0):
+        if len(info) > 0:
+            # Send user's message to the server
             self.app.message_entry.delete(0, len(info))
             current_time = datetime.now()
             formatted_time = current_time.strftime("%I:%M%p %m/%d/%y")
-            data = {"TYPE" :"MESSAGE", "CONTENT" : info, "TIME": formatted_time, "LOBBY" : self.current_lobby}
+            data = {"TYPE": "MESSAGE", "CONTENT": info, "TIME": formatted_time, "LOBBY": self.current_lobby}
             json_data = json.dumps(data).encode('utf-8')
             self.client_socket.send(json_data)
 
     def quit(self):
+        # Clean up and exit the application
         self.running = False
         print("Disconnected from server.")
-        data = {"TYPE" : "QUIT"}
+        data = {"TYPE": "QUIT"}
         json_data = json.dumps(data).encode('utf-8')
         self.client_socket.send(json_data)
         self.client_socket.close()
         self.app.root.destroy()
-        
+
     def start(self):
         root = Tk()
         self.app = Gui(root)
@@ -112,4 +116,3 @@ class Client:
         receive_thread = threading.Thread(target=self.receive_messages)
         receive_thread.start()
         root.mainloop()
-        

@@ -3,6 +3,7 @@ from tkinter import ttk, font
 
 class Gui:
     def __init__(self, root : Tk):
+        # Initialize the GUI window with default settings.
         self.root = root
         self.root.geometry("1200x800")
         self.root.minsize(width=1200, height=800)
