@@ -1,5 +1,4 @@
 from .client import Client
-import logging
 import sys
 
 
